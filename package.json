@@ -1,0 +1,20 @@
+{
+  "name": "threepgen",
+  "version": "1.0.0",
+  "description": "Static generator using EJS and Node",
+  "main": "app.js",
+  "bin": {
+    "threepgen": "build.js"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "node ./bin/build"
+  },
+  "author": "Matthew Burtless",
+  "license": "ISC",
+  "dependencies": {
+    "ejs": "^2.5.7",
+    "fs-extra": "^5.0.0",
+    "path": "^0.12.7"
+  }
+}

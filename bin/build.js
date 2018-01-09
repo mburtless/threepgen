@@ -10,6 +10,16 @@ const srcStaticPath = srcPath + "/static";
 const dstStaticPath = dstPath + "/static";
 const srcPagesPath = srcPath + "/pages";
 
+marked.setOptions({
+  gfm: true,
+  tables: true,
+  breaks: false,
+  pedantic: false,
+  sanitize: false,
+  smartLists: true,
+  smartypants: false
+});
+
 //blow away current dst contents
 try{
   fs.emptyDirSync(dstPath);

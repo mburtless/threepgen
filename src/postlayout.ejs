@@ -1,0 +1,18 @@
+<ul class="timeline">
+  <% Object.keys(posts).forEach( (post) => { %>
+  <li>
+    <div class="timeline-badge danger"><i class="glyphicon glyphicons-info-sign"></i></div>
+    <div class="timeline-panel">
+      <div class="timeline-heading">
+        <h4 class="timeline-title"><%- posts[post].title %></h4>
+        <h5 class="timeline-title"><%- posts[post].description %></h4>
+      </div>
+      <% if (posts[post].body) { %>
+        <div class="timeline-body">
+            <%- posts[post].body %>
+        </div>
+      <% } %>
+    </div>
+  </li>
+  <% }); %>
+<ul>

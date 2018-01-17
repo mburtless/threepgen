@@ -1,2 +1,9 @@
-dst/
-src/
+dst/*
+src/*
+src/partials/*
+src/pages/*
+src/static/*
+src/static/css/*
+src/static/fonts/*
+src/static/js/*
+!*.gitkeep

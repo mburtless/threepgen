@@ -13,7 +13,15 @@ const srcPagesPath = srcPath + "/pages";
 const mainLayout = 'layout.ejs';
 const postLayout = 'postlayout.ejs'
 
-const postChrome = {
+const postIcons = {
+  primary: 'glyphicon-pencil',
+  success: 'glyphicon-ok',
+  warning: 'glyphicon-warning-sign',
+  danger: 'glyphicon-fire',
+  info: 'glyphicon-info-sign'
+};
+
+const postColors = {
   primary: 'glyphicon-pencil',
   success: 'glyphicon-ok',
   warning: 'glyphicon-warning-sign',
@@ -58,11 +66,13 @@ function renderPage(pageName, pageData) {
 
     //If type is post, send rendered body to the postlayout and override body to return with new content
     if(attribs.type == "post"){
-      //Make an array with one member to hold our post
+
       attribs.body = body;
+      attribs.postIcon = postIcons[attribs.postChrome]
+      console.log('postChrome is ' + attribs.postChrome + " and icon is " + attribs.postIcon)
+      //Make an array with one member to hold our post
       var postArr = new Array();
       postArr.push(attribs);
-
 
       ejs.renderFile(path.join(srcPath, `${postLayout}`), {body: body, config: config.site, posts: postArr}, (err, str) => {
           if(err){
@@ -126,7 +136,7 @@ Object.keys(pages).forEach( (page) => {
   [attributes, body] = renderPage(page, pages[page]);
   var filename = page.substr(0, page.indexOf('.')) + '.html';
 
-  //If the page was a post, save the title and desc to an arr for generating timeline
+  //If the page was a post, save the returned attributes to an arr for generating timeline
   if(attributes.type == "post"){
     /*timelinePosts[page] = {}
     timelinePosts[page].description = attributes.description;
@@ -137,7 +147,9 @@ Object.keys(pages).forEach( (page) => {
     timelinePosts.push({description: attributes.description,
       title: attributes.title,
       url: './' + filename,
-      date: attributes.date
+      date: attributes.date,
+      postIcon: attributes.postIcon,
+      postChrome: attributes.postChrome
     });
   }
 
@@ -159,10 +171,11 @@ else {
   var finalTimeline = "No posts were found!"
 }
 
+//Take our final UL and use it to render index.html
 ejs.renderFile(path.join(srcPath, `${mainLayout}`), {body: finalTimeline, config: config.site, attributes: ""}, (err, str) => {
     if(err){
       console.log('Error rendering ' + page + ": " + err);
     }
-    var filename = 'blog.html';
+    var filename = 'index.html';
     fs.writeFile(path.join(dstPath, filename), str);
 });

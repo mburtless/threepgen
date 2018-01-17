@@ -13,6 +13,14 @@ const srcPagesPath = srcPath + "/pages";
 const mainLayout = 'layout.ejs';
 const postLayout = 'postlayout.ejs'
 
+const postChrome = {
+  primary: 'glyphicon-pencil',
+  success: 'glyphicon-ok',
+  warning: 'glyphicon-warning-sign',
+  danger: 'glyphicon-fire',
+  info: 'glyphicon-info-sign'
+};
+
 marked.setOptions({
   gfm: true,
   tables: true,
@@ -23,10 +31,18 @@ marked.setOptions({
   smartypants: false
 });
 
+function sortPostsByDate(posts) {
+  posts.sort( (a,b) => {
+    var dateA = new Date(a.date).getTime();
+    var dateB = new Date(b.date).getTime();
+    return dateA - dateB;
+  });
+}
+
 function renderPage(pageName, pageData) {
   const pageContent = frontMatter(fs.readFileSync(path.join(pageData.dir, pageName), 'utf8'))
-  const attribs = pageContent.attributes
-  //console.log('Ext is ' + pageData.ext);
+  var attribs = pageContent.attributes
+
   switch(pageData.ext) {
     case '.md':
       var body = marked(pageContent.body);
@@ -42,30 +58,28 @@ function renderPage(pageName, pageData) {
 
     //If type is post, send rendered body to the postlayout and override body to return with new content
     if(attribs.type == "post"){
-      console.log('Post detected!');
-      var postArr = { 1: Object.assign({}, attribs) };
-      postArr[1].body = body;
-      console.log('PostArr looks like this ' + postArr[1].description);
+      //Make an array with one member to hold our post
+      attribs.body = body;
+      var postArr = new Array();
+      postArr.push(attribs);
+
+
       ejs.renderFile(path.join(srcPath, `${postLayout}`), {body: body, config: config.site, posts: postArr}, (err, str) => {
           if(err){
             console.log('Error rendering ' + pageName + ": " + err);
           }
           body = str;
       });
-      //console.log('Rendered post body is :' + body);
   }
   return [ attribs, body ];
 }
 
 function renderPosts(posts) {
-  var postUl = [];
-  /*var attribs = {
-    title: postName,
-    description: postDescription
-  };*/
+  //var postUl = [];
+  var sortedPosts = sortPostsByDate(posts);
   ejs.renderFile(path.join(srcPath, `${postLayout}`), {body: "", config: config.site, posts: posts}, (err, str) => {
       if(err){
-        console.log('Error rendering ' + page + ": " + err);
+        console.log('Error rendering posts: ' + err);
       }
       postUl = str;
   });
@@ -73,11 +87,21 @@ function renderPosts(posts) {
   return postUl;
 }
 
-//blow away current dst contents
-try{
-  fs.emptyDirSync(dstPath);
-} catch(err) {
-  console.log('Error emptying ' + dstPath + ': ' + err);
+var args = {};
+if (process.argv.length > 2) {
+  Object.keys(process.argv).forEach( (arg) => {
+    args[process.argv[arg]] = 'True';
+  });
+}
+
+//If clean flag, blow away current dst contents
+if(args['clean']){
+  console.log('Emptying destination ' + dstPath + '\n------------\n');
+  try{
+    fs.emptyDirSync(dstPath);
+  } catch(err) {
+    console.log('Error emptying ' + dstPath + ': ' + err);
+  }
 }
 
 //read all files in pages and save attributes to an array
@@ -94,32 +118,47 @@ try{
   console.log('Error copying assets to ' + dstStaticPath + ": " + err);
 }
 
-var timelinePosts = {};
-var finalTimeline = [];
+var timelinePosts = new Array();
+
 //itterate through each file we read in pages and render content
+console.log('Rendering ' + Object.keys(pages).length + ' pages.\n------------\n');
 Object.keys(pages).forEach( (page) => {
   [attributes, body] = renderPage(page, pages[page]);
+  var filename = page.substr(0, page.indexOf('.')) + '.html';
 
   //If the page was a post, save the title and desc to an arr for generating timeline
   if(attributes.type == "post"){
-    timelinePosts[page] = {}
+    /*timelinePosts[page] = {}
     timelinePosts[page].description = attributes.description;
     timelinePosts[page].title = attributes.description;
+    timelinePosts[page].url = './' + filename;
+    timelinePosts[page].date = attributes.date;*/
+    var SomeVar = SomeVar || 'Default Value';
+    timelinePosts.push({description: attributes.description,
+      title: attributes.title,
+      url: './' + filename,
+      date: attributes.date
+    });
   }
 
-  console.log('Rendering ' + page);
+  //console.log('Rendering ' + page);
   ejs.renderFile(path.join(srcPath, `${mainLayout}`), {body: body, config: config.site, attributes: attributes}, (err, str) => {
       if(err){
         console.log('Error rendering ' + page + ": " + err);
       }
-      var filename = page.substr(0, page.indexOf('.')) + '.html';
       fs.writeFile(path.join(dstPath, filename), str);
   });
 });
 
-//Send arr of all posts to renderPosts for rendering of final UL
-finalTimeline = renderPosts(timelinePosts);
-//console.log('Final timeline looks like ' + finalTimeline);
+//If we have posts, sort and send to renderPosts for rendering of final UL
+if(timelinePosts.length > 0){
+  console.log('Rendering timeline for ' + timelinePosts.length + ' blog posts.\n------------\n');
+  var finalTimeline = renderPosts(timelinePosts);
+}
+else {
+  var finalTimeline = "No posts were found!"
+}
+
 ejs.renderFile(path.join(srcPath, `${mainLayout}`), {body: finalTimeline, config: config.site, attributes: ""}, (err, str) => {
     if(err){
       console.log('Error rendering ' + page + ": " + err);
@@ -127,9 +166,3 @@ ejs.renderFile(path.join(srcPath, `${mainLayout}`), {body: finalTimeline, config
     var filename = 'blog.html';
     fs.writeFile(path.join(dstPath, filename), str);
 });
-//itterate through each post in timelinePosts to generate final timeline pages
-/*Object.keys(timelinePosts).forEach( (post) => {
-  console.log('Adding ' + timelinePosts[post] + ' to the timeline');
-  var postLi = renderPost(post, timelinePosts[post]);
-  finalTimeline.push(postLi);
-});*/
